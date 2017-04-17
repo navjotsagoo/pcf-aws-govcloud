@@ -22,9 +22,9 @@ Identify the [AMI id for Ops Manager](https://network.pivotal.io/products/ops-ma
 > us-east-1: ami-8828a99e
 
 ## Launch AMIs
-Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM. Select volume size of 10GB.
+Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM. Select volume size of 10 GB.
 
-Launch `ami-8828a99e` in us-east-1 region to create an Ops Manager VM. Select volume size of 100GB (recommended).
+Launch `ami-8828a99e` in us-east-1 region to create an Ops Manager VM. Select volume size of 100 GB.
 
 ## Take Snapshots & Create EBS Volumes
 After successful launch, stop the Stemcell VM and take a snapshot.
@@ -33,23 +33,23 @@ After successful launch, stop the Stemcell VM and take a snapshot.
 After successful launch, stop the Ops Manager VM and take a snapshot.
 > Select VM --> Actions --> Image --> Create Image
 
-Create a new EBS volume of the earlier stemcell vm snapshot. We will call this `stemcell-source` disk.
+Create a new EBS volume `stemcell-source` from the earlier Stemcell vm snapshot.
 > Select Snapshot --> Actions --> Create Volume
 
-Create a new EBS volume 5x the size of `stemcell-source` disk.
-> Create Volume --> --> select size: 50G --> name 'stemcell-temp'
+Create a new EBS volume `stemcell-temp` 5x the size of stemcell-source disk.
+> Create Volume --> --> select size: 50 GB
 
-Create a new EBS volume of the earlier Ops Manager vm snapshot. We will call this `opsmanager-source` disk.
+Create a new EBS volume `opsmanager-source` from the earlier Ops Manager vm snapshot.
 > Select Snapshot --> Actions --> Create Volume
 
-Create a new EBS volume 5x the size of `opsmanager-source` disk
-> Create Volume --> select size: 500G --> name 'opsmanager-temp'
+Create a new EBS volume `opsmanager-temp` 5x the size of opsmanager-source disk
+> Create Volume --> select size: 500 GB
 
 ## Create a disk copy for each volume
 Launch a generic ubuntu vm in AWS commercial us-east-1 region. SSH into this vm.
 
 ### Stemcell
-Attach the `stemcell-source` disk to generic VM. Select volume --> Actions --> Attach Volume.
+Attach the `stemcell-source` disk to generic VM.
 >  /dev/xvdf
 
 Attach `stemcell-temp` disk to generic VM
@@ -70,7 +70,7 @@ sudo mkdir /stemcell
 sudo mount /dev/xvdg /stemcell
 ```
 
-Copy the `stemcell-source` to `stemcell-temp` with dd utility
+Copy the `stemcell-source` disk to `stemcell-temp` disk with data duplicator(dd)
 ```bash
 dd if=/dev/xvdf bs=512K | bzip2 -9 -c > /stemcell/3363.stemcell.raw.bz2
 ```
@@ -96,14 +96,16 @@ sudo mkdir /opsman
 sudo mount /dev/xvdi /opsman
 ```
 
-Copy the `opsmanager-source` to `opsmanager-temp` with dd utility
+Copy the `opsmanager-source` disk to `opsmanager-temp` disk with data duplicator(dd)
 ```bash
 dd if=/dev/xvdh bs=512K | bzip2 -9 -c > /opsman/ops.manager.raw.bz2
 ```
 
 ## Transfer files to AWS GovCloud
-Launch a generic VM in AWS GovCloud.
+Launch a generic VM in AWS GovCloud. Select volume size of 200 GB.
+
 Copy the pem key to your AWS Commercial generic VM.
+
 Secure copy files from AWS Commercial VM to AWS GovCloud VM.
 ```bash
 sudo scp -i awsgov.pem 3363.stemcell.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.amazonaws.com:/home/ubuntu
@@ -112,21 +114,23 @@ sudo scp -i awsgov.pem ops.manager.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.a
 
 ## Unzip the files
 SSH into the generic VM in AWS GovCloud
+
 ```bash
+cd /home/ubuntu
 bunzip2 3363.stemcell.raw.bz2
 bunzip2 ops.manager.raw.bz2
 ```
 
 ## Create EBS Volumes
-Create two EBS volumes, each of the original size of the snapshot taken earlier
+Create two new EBS volumes, each of the original size of the snapshot taken earlier.
+
+Format them with ext4 and mount them to generic VM in AWS GovCloud. See commands from above.
 
 Stemcell
 > /dev/xvde (10 GB)
 
 Ops Manager
 > /dev/xvdg (100 GB)
-
-Format them with ext4 and mount them to generic VM. See commands from above.
 
 ## Copy files to EBS volumes
 ```bash
