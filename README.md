@@ -18,15 +18,13 @@ more stemcell.MF
 ```
 > us-east-1: ami-93b23185
 
-Identify the AMI id for Ops Manager in us-east-1 region
-https://network.pivotal.io/products/ops-manager/
+Identify the [AMI id for Ops Manager](https://network.pivotal.io/products/ops-manager/) in us-east-1 region
 > us-east-1: ami-8828a99e
 
 ## Launch AMIs
-Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM.
+Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM. Select volume size of 10G.
 
-Launch `ami-8828a99e` in us-east-1 region to create an Ops Manager VM
-Select volume size of 100GB (recommended)
+Launch `ami-8828a99e` in us-east-1 region to create an Ops Manager VM. Select volume size of 100GB (recommended).
 
 ## Take Snapshots & Create EBS Volumes
 After successful launch, stop the Stemcell VM and take a snapshot.
@@ -39,41 +37,72 @@ Create a new EBS volume of the earlier stemcell vm snapshot. We will call this `
 > Select Snapshot --> Actions --> Create Volume
 
 Create a new EBS volume 5x the size of `stemcell-source` disk.
-> Create Volume --> 'select size' --> name it 'stemcell-temp'
+> Create Volume --> --> select size: 50G --> name 'stemcell-temp'
 
 Create a new EBS volume of the earlier Ops Manager vm snapshot. We will call this `opsmanager-source` disk.
 > Select Snapshot --> Actions --> Create Volume
 
 Create a new EBS volume 5x the size of `opsmanager-source` disk
-> Create Volume --> 'select size' --> name it 'opsmanager-temp'
+> Create Volume --> select size: 500G --> name 'opsmanager-temp'
 
 ## Create a disk copy for each volume
-Launch a generic VM
+Launch a generic ubuntu VM in AWS Commercial us-east-1 region
 
 ### Stemcell
 Attach the `stemcell-source` disk to generic VM
+> Select volume --> Actions --> Attach Volume
 >  /dev/xvdf
 
 Attach `stemcell-temp` disk to generic VM
-> /dev/xvdg formatted at /data mount point
+> Select volume --> Actions --> Attach Volume
+> /dev/xvdg mounted at /data mount point
 
-Format the `stemcell-temp` disk with ext4 file system
-
-Copy the stemcell-source to stemcell-temp with dd utility
+View all available disk devices
 ```bash
-dd if=/dev/xvdf bs=512K | bzip2 -9 -c > /data/3363.stemcell.raw.bz2
+lsblk
+```
+Format the `stemcell-temp` disk with ext4 file system
+```bash
+sudo mkfs -t ext4 `/dev/xvdg`
+```
+
+Mount the `stemcell-temp` disk to VM
+```bash
+sudo mkdir /stemcell
+sudo mount /dev/xvdg /stemcell
+```
+
+Copy the `stemcell-source` to `stemcell-temp` with dd utility
+```bash
+dd if=/dev/xvdf bs=512K | bzip2 -9 -c > /stemcell/3363.stemcell.raw.bz2
 ```
 ### Ops Manager
 Attach the `opsmanger-source` disk to generic VM
 > /dev/xvdh
 
 Attach the `opsmanager-temp` disk to generic VM
-> /dev/xvdi formatted at /opsman mount point
+> /dev/xvdi
 
-Copy the opsmanager-source to opsmanager-temp with dd utility
+View all available disk devices
+```bash
+lsblk
+```
+Format the `opsmanager-temp` disk with ext4 file system
+```bash
+sudo mkfs -t ext4 `/dev/xvdi`
+```
+
+Mount the `opsmanager-temp` disk to VM
+```bash
+sudo mkdir /opsman
+sudo mount /dev/xvdi /opsman
+```
+
+Copy the `opsmanager-source` to `opsmanager-temp` with dd utility
 ```bash
 dd if=/dev/xvdh bs=512K | bzip2 -9 -c > /opsman/ops.manager.raw.bz2
 ```
+
 ## Transfer files to AWS GovCloud
 Launch a generic VM in AWS GovCloud
 
@@ -94,15 +123,15 @@ Create two EBS volumes, each of the original size of the snapshot taken earlier
 > /dev/xvde (stemcell - 10 G)
 > /dev/xvdg (opsmanager - 100 G)
 
-Format them with ext4 and mount them to generic VM
+Format them with ext4 and mount them to generic VM. See commands from above.
 
-## Copy the files independently to EBS volumes
+## Copy files to EBS volumes
 ```bash
 dd if=3363.stemcell.raw of=/dev/xvde
 dd if=ops.manager.raw of=/dev/xvdg bs=512K
 ```
 
-Detach Volumes from Generic VM
+Detach EBS Volumes from Generic VM
 Create Snapshots for each volume
 
 For Stemcell snapshot, create an AMI with /dev/sda1: snapshot + /dev/sdb instance-store, HVM
