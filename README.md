@@ -22,7 +22,7 @@ Identify the [AMI id for Ops Manager](https://network.pivotal.io/products/ops-ma
 > us-east-1: ami-8828a99e
 
 ## Launch AMIs
-Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM. Select volume size of 10G.
+Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM. Select volume size of 10GB.
 
 Launch `ami-8828a99e` in us-east-1 region to create an Ops Manager VM. Select volume size of 100GB (recommended).
 
@@ -49,13 +49,11 @@ Create a new EBS volume 5x the size of `opsmanager-source` disk
 Launch a generic ubuntu VM in AWS Commercial us-east-1 region
 
 ### Stemcell
-Attach the `stemcell-source` disk to generic VM
-> Select volume --> Actions --> Attach Volume
+Attach the `stemcell-source` disk to generic VM. Select volume --> Actions --> Attach Volume.
 >  /dev/xvdf
 
 Attach `stemcell-temp` disk to generic VM
-> Select volume --> Actions --> Attach Volume
-> /dev/xvdg mounted at /data mount point
+> /dev/xvdg
 
 View all available disk devices
 ```bash
@@ -113,6 +111,7 @@ sudo scp -i awsgov.pem ops.manager.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.a
 ```
 
 ## Unzip the files
+SSH into the generic VM in AWS GovCloud
 ```bash
 bunzip2 3363.stemcell.raw.bz2
 bunzip2 ops.manager.raw.bz2
@@ -120,8 +119,11 @@ bunzip2 ops.manager.raw.bz2
 
 ## Create EBS Volumes
 Create two EBS volumes, each of the original size of the snapshot taken earlier
-> /dev/xvde (stemcell - 10 G)
-> /dev/xvdg (opsmanager - 100 G)
+Stemcell
+> /dev/xvde (10 GB)
+
+Ops Manager
+> /dev/xvdg (100 GB)
 
 Format them with ext4 and mount them to generic VM. See commands from above.
 
