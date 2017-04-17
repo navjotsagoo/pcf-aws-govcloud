@@ -46,7 +46,7 @@ Create a new EBS volume 5x the size of `opsmanager-source` disk
 > Create Volume --> select size: 500G --> name 'opsmanager-temp'
 
 ## Create a disk copy for each volume
-Launch a generic ubuntu VM in AWS Commercial us-east-1 region
+Launch a generic ubuntu vm in AWS commercial us-east-1 region. SSH into this vm.
 
 ### Stemcell
 Attach the `stemcell-source` disk to generic VM. Select volume --> Actions --> Attach Volume.
@@ -102,9 +102,9 @@ dd if=/dev/xvdh bs=512K | bzip2 -9 -c > /opsman/ops.manager.raw.bz2
 ```
 
 ## Transfer files to AWS GovCloud
-Launch a generic VM in AWS GovCloud
-
-Secure copy files from AWS Commercial to AWS GovCloud
+Launch a generic VM in AWS GovCloud.
+Copy the pem key to your AWS Commercial generic VM.
+Secure copy files from AWS Commercial VM to AWS GovCloud VM.
 ```bash
 sudo scp -i awsgov.pem 3363.stemcell.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.amazonaws.com:/home/ubuntu
 sudo scp -i awsgov.pem ops.manager.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.amazonaws.com:/home/ubuntu
@@ -119,6 +119,7 @@ bunzip2 ops.manager.raw.bz2
 
 ## Create EBS Volumes
 Create two EBS volumes, each of the original size of the snapshot taken earlier
+
 Stemcell
 > /dev/xvde (10 GB)
 
@@ -137,6 +138,7 @@ Detach EBS Volumes from Generic VM
 Create Snapshots for each volume
 
 For Stemcell snapshot, create an AMI with /dev/sda1: snapshot + /dev/sdb instance-store, HVM
+
 Note down the AMI ID
 
 For Ops Manager, modify settings
