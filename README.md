@@ -21,7 +21,7 @@ more stemcell.MF
 Identify the [AMI id for Ops Manager](https://network.pivotal.io/products/ops-manager/) in us-east-1 region
 > us-east-1: ami-8828a99e
 
-## Launch AMIs
+## Launch AMIs in AWS Commercial
 Launch `ami-93b23185` in us-east-1 region to create a Stemcell VM. Select volume size of 10 GB.
 
 Launch `ami-8828a99e` in us-east-1 region to create an Ops Manager VM. Select volume size of 100 GB.
@@ -138,8 +138,8 @@ dd if=3363.stemcell.raw of=/dev/xvde
 dd if=ops.manager.raw of=/dev/xvdg bs=512K
 ```
 
-Detach EBS Volumes from Generic VM
-Create Snapshots for each volume
+Detach EBS Volumes from Generic VM.
+Create Snapshots for each volume. 
 
 For Stemcell snapshot, create an AMI with /dev/sda1: snapshot + /dev/sdb instance-store, HVM
 
