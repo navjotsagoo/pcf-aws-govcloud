@@ -222,7 +222,7 @@ sha1sum light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
 Edit Ops Manager AWS Configuration
 ```bash
 sudo vi /opsman/home/tempest-web/tempest/web/config/versions.yml
-> Edit `sha1` field for `aws` under stemcells
+> Update `sha1` value for `aws` key under stemcells (stemcells.aws.sha1)
 ```
 
 Remove the original stemcell from Ops Manager stemcell default directory
