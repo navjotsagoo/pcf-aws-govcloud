@@ -2,11 +2,7 @@
 **Instructions to deploy Pivotal Cloud Foundry on AWS GovCloud**
 
 PreReqs:
-- AWS Commercial account with admin privileges
-- AWS GovCloud account with admin
----
-Overview of Steps
-1.
+- AWS Commercial and AWS GovCloud accounts with admin privileges
 ---
 ## Identify AMI IDs for Ubuntu Stemcell & Ops Manager
 
@@ -20,12 +16,12 @@ Download the AWS Stemcell from Pivotal Network or [bosh.io](http://bosh.io/stemc
 wget --content-disposition https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3363.15
 ```
 
-Unzip the stemcell file
+Open the stemcell file
 ```bash
 tar -xzf light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
 ```
 
-Identify the `AMI id for Ubuntu Stemcell` in us-east-1 region
+Identify the `Stemcell AMI Id` in us-east-1 region
 ```bash
 more stemcell.MF
 ```
@@ -46,10 +42,12 @@ After successful launch, stop the Stemcell vm and take a snapshot.
 
 After successful launch, stop the Ops Manager vm and take a snapshot.
 
+
 Create a new EBS volume `stemcell-source` from the earlier Stemcell vm snapshot.
 
 Create a new EBS volume `stemcell-temp` 4x the size of stemcell-source disk.
 > 10 GB (Original Stemcell VM ) * 4 = 40 GB
+
 
 Create a new EBS volume `opsmanager-source` from the earlier Ops Manager vm snapshot.
 
@@ -121,19 +119,22 @@ dd if=/dev/xvdh bs=512K status=progress | bzip2 -9 -c > /opsman/ops.manager.raw.
 Launch a jumpbox Ubuntu 14.04 VM in AWS GovCloud. Select volume size of 200 GB during provisioning.
 Create or update this jumpbox's security group to allow ssh access from AWS Commercial jumbox vm.
 
-Copy the pem key to your AWS Commercial jumpbox vm.  
+Copy the pem key from your AWS GovCloud account to your AWS Commercial jumpbox vm.  
 
-Secure copy files from AWS Commercial VM to AWS GovCloud vm.
+Secure copy files from AWS Commercial jumpbox vm to AWS GovCloud jumpbox vm.
 ```bash
 sudo scp -i awsgov.pem 3363.stemcell.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.amazonaws.com:/home/ubuntu
 sudo scp -i awsgov.pem ops.manager.raw.bz2 ubuntu@ec2-...us-gov-west-1.compute.amazonaws.com:/home/ubuntu
 ```
 Alternative: Use Amazon S3 to transfer files to AWS GovCloud jumpbox vm.
 
-** All actions below are now done in AWS GovCloud **
+
+**All actions below are now done in AWS GovCloud**
+
+
 ## Uncompress Files
 
-SSH into the jumpbox VM in AWS GovCloud
+SSH into the jumpbox VM in AWS GovCloud & uncompress files
 
 ```bash
 cd /home/ubuntu
@@ -145,9 +146,9 @@ bunzip2 ops.manager.raw.bz2
 
 ## Create New EBS Volumes
 
-Create two new EBS volumes, each of the original size of the snapshots taken earlier.
-> Stemcell volume = 10 GB
-> Ops Manager volume = 50 GB
+Create two new EBS volumes, where each volume is the original size of the snapshots taken earlier.
+> Original Stemcell volume = 10 GB;
+> Original Ops Manager volume = 50 GB
 
 Format them with ext4 file system and mount them to jumpbox vm. See commands from above.
 
@@ -172,14 +173,16 @@ dd if=ops.manager.raw | pv -tapbe | dd of=/dev/xvdg bs=512K
 
 ## Create Stemcell AMI
 
-Detach Stemcell EBS Volume `/dev/xvde` from Generic VM. Create Snapshot.
+Detach Stemcell EBS Volume `/dev/xvde` from jumpbox vm. Create Snapshot.
 
 From Stemcell snapshot, create an AMI with /dev/sda1 as root and /dev/sdb as instance-store.
-This is Stemcell AMI ID `ami-4ee6622f` in AWS GovCloud.
+
+Stemcell AMI ID in AWS GovCloud
+> ami-4ee6622f
 
 ## Create Ops Manager AMI
 
-Create a directory and mount the `part` segment type of Ops Manager EBS volume to that directory.
+Create a new directory and mount the `part` segment type of Ops Manager EBS volume to the new directory.
 ```bash
 sudo mkdir /opsman
 sudo mount /dev/xvdg1 /opsman
@@ -199,7 +202,7 @@ wget --content-disposition https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-t
 tar -xzf light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
 ```
 
-Modify the `stemcell.MF` file with the AWS GovCloud Stemcell AMI ID from previous step.
+Modify the `stemcell.MF` file with the AWS GovCloud Stemcell AMI ID from prior step.
 ```
 us-gov-west-1: ami-4ee6622f
 ```
@@ -212,9 +215,8 @@ tar zcvf light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz *
 
 Create `SHA-1` of the stemcell file
 ```bash
-sha1sum light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz > sha1.txt.sha1
-cat sha1.txt.sha1
-> `b0d2faba37b5ee17aad322fdfa0c5dfa1a14370a`
+sha1sum light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
+> b0d2faba37b5ee17aad322fdfa0c5dfa1a14370a
 ```
 
 Edit Ops Manager AWS Configuration
@@ -228,17 +230,19 @@ Remove the original stemcell from Ops Manager stemcell default directory
 cd /opsman/var/tempest/stemcells/
 rm light-bosh-stemcell-3363.15-aws-xen-hvm-ubuntu-trusty-go_agent.tgz
 ```
+
 Move the modified stemcell to the Ops Manager stemcell default directory
 ```bash
 cp /home/ubuntu/stemcells/* /opsman/var/tempest/stemcells/
 ```
 
-Unmount and detach `/dev/xvdg1` disk from jumpbox v
+Unmount and detach `/dev/xvdg1` disk from jumpbox vm
 ```bash
 umount -d /dev/xvdg1
 ```
 
-Create a snapshot and then create an AMI of the snapshot.
+Create a snapshot from this disk volume. Then create an AMI of the snapshot.
+
 Congratulations, you now have an Ops Manager AMI in GovCloud. :hand:
 > ami-10f67271
 
