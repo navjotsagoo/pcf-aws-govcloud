@@ -241,7 +241,20 @@ Unmount and detach `/dev/xvdg1` disk from jumpbox vm
 umount -d /dev/xvdg1
 ```
 
-Create a snapshot from this disk volume. Then create an AMI of the snapshot.
+Create an EBS snapshot from this disk volume.
+
+Create an image from the EBS snapshot. Select the following properties:
+```
+Name: Ops_Manager_1.10.4
+Description: Ops_Manager_1.10.4
+Architecture: x86_64
+Root device name: /dev/sda1
+RAM disk ID: Use default
+Virtualization type: Hardware-assisted-virtualization
+Kernel ID: Use default
+Root Volume Size: 100
+```
+
 
 Congratulations, you now have an Ops Manager AMI in GovCloud. :hand:
 > ami-10f67271
